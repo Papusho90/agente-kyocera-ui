@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Amplify } from 'aws-amplify';
 import {
@@ -30,7 +30,7 @@ const kyoceraTheme: Theme = {
           20: '#f8ccce',
           40: '#f099a0',
           60: '#e56672',
-          80: '#d00000', // Rojo Kyocera principal
+          80: '#d00000', // Rojo Kyocera
           90: '#a30000',
           100: '#800000',
         },
@@ -50,8 +50,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'sans-serif',
   },
   sidebar: {
-    width: '250px',
-    backgroundColor: '#1e1e1e',
+    width: '260px',
+    backgroundColor: '#171717', // Color más oscuro, estilo ChatGPT
     color: '#fff',
     padding: '1.5rem',
     position: 'relative',
@@ -63,25 +63,29 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid #333',
     paddingBottom: '1rem',
     marginTop: 0,
+    fontSize: '1.2rem',
   },
   navList: {
     listStyle: 'none',
     padding: 0,
-    marginTop: '2rem',
+    marginTop: '1.5rem',
   },
   navButton: {
     display: 'block',
     width: '100%',
     textAlign: 'left',
-    background: 'none',
+    background: 'transparent',
     border: 'none',
-    color: '#aaa',
-    padding: '0.6rem 0',
-    fontSize: '1rem',
+    color: '#ececec',
+    padding: '0.8rem 1rem',
+    borderRadius: '6px',
+    fontSize: '0.95rem',
     cursor: 'pointer',
+    marginBottom: '0.5rem',
+    transition: 'background 0.2s',
   },
   navButtonActive: {
-    color: '#fff',
+    backgroundColor: '#2f2f2f',
     fontWeight: 'bold',
   },
   signOutButton: {
@@ -90,60 +94,125 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#d00000',
     color: '#fff',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '6px',
     cursor: 'pointer',
     fontWeight: 'bold',
   },
   main: {
     flex: 1,
-    backgroundColor: '#f4f6f8',
-    padding: '2rem',
+    backgroundColor: '#ffffff',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
   },
   topBar: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: '2.5rem',
-  },
-  topBarTitle: {
-    margin: 0,
-    color: '#333',
+    padding: '1rem 2rem',
+    borderBottom: '1px solid #e5e5e5',
   },
   userBadge: {
-    background: '#fff',
-    padding: '0.5rem 1rem',
+    background: '#f4f4f4',
+    padding: '0.4rem 1rem',
     borderRadius: '20px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    fontSize: '0.9rem',
+    color: '#333',
   },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+  chatContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  messageList: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '2rem',
+    display: 'flex',
+    flexDirection: 'column',
     gap: '1.5rem',
   },
-  statCard: {
-    background: '#fff',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+  messageWrapperUser: {
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
-  statLabel: {
-    margin: '0 0 1rem 0',
-    color: '#666',
+  messageWrapperBot: {
+    display: 'flex',
+    justifyContent: 'flex-start',
   },
+  messageBubbleUser: {
+    backgroundColor: '#f3f3f3',
+    color: '#000',
+    padding: '1rem 1.5rem',
+    borderRadius: '20px 20px 0 20px',
+    maxWidth: '70%',
+    lineHeight: '1.5',
+    fontSize: '1rem',
+  },
+  messageBubbleBot: {
+    backgroundColor: '#fff',
+    color: '#000',
+    padding: '1rem 1.5rem',
+    borderRadius: '20px 20px 20px 0',
+    border: '1px solid #e5e5e5',
+    maxWidth: '70%',
+    lineHeight: '1.5',
+    fontSize: '1rem',
+  },
+  inputContainer: {
+    padding: '1.5rem 2rem',
+    backgroundColor: '#fff',
+  },
+  inputWrapper: {
+    display: 'flex',
+    gap: '0.8rem',
+    maxWidth: '800px',
+    margin: '0 auto',
+    background: '#f4f4f4',
+    borderRadius: '25px',
+    padding: '0.4rem 0.4rem 0.4rem 1.5rem',
+    alignItems: 'center',
+  },
+  textInput: {
+    flex: 1,
+    border: 'none',
+    background: 'transparent',
+    fontSize: '1rem',
+    outline: 'none',
+    padding: '0.5rem 0',
+  },
+  sendButton: {
+    backgroundColor: '#d00000',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.2rem',
+  },
+  settingsView: {
+    padding: '3rem',
+    color: '#333',
+  }
 };
 
 // ---------------------------------------------------------------------------
-// Header personalizado del Authenticator
+// Header del Login
 // ---------------------------------------------------------------------------
 function AuthHeader() {
   const { tokens } = useTheme();
   return (
     <View textAlign="center" padding={tokens.space.large}>
       <Heading level={2} style={{ color: '#d00000', fontWeight: 'bold' }}>
-        Kyocera Fleet Services
+        Agente Kyocera
       </Heading>
       <Text style={{ marginTop: '0.5rem', color: '#555' }}>
-        Portal de Administración
+        Inicia sesión para conversar con el Agente
       </Text>
     </View>
   );
@@ -154,24 +223,12 @@ const authComponents = { Header: AuthHeader };
 // ---------------------------------------------------------------------------
 // Sidebar
 // ---------------------------------------------------------------------------
-interface NavItem {
-  id: string;
-  label: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { id: 'resumen', label: '📊 Resumen' },
-  { id: 'equipos', label: '🖨️ Mis Equipos' },
+const NAV_ITEMS = [
+  { id: 'chat', label: '💬 Nuevo Chat' },
   { id: 'configuracion', label: '⚙️ Configuración' },
 ];
 
-interface SidebarProps {
-  activeItem: string;
-  onSelect: (id: string) => void;
-  onSignOut: () => void;
-}
-
-function Sidebar({ activeItem, onSelect, onSignOut }: SidebarProps) {
+function Sidebar({ activeItem, onSelect, onSignOut }: any) {
   return (
     <aside style={styles.sidebar}>
       <h2 style={styles.sidebarTitle}>Agente Kyocera</h2>
@@ -184,7 +241,6 @@ function Sidebar({ activeItem, onSelect, onSignOut }: SidebarProps) {
                 <button
                   type="button"
                   onClick={() => onSelect(item.id)}
-                  aria-current={isActive ? 'page' : undefined}
                   style={{
                     ...styles.navButton,
                     ...(isActive ? styles.navButtonActive : {}),
@@ -205,64 +261,97 @@ function Sidebar({ activeItem, onSelect, onSignOut }: SidebarProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Tarjeta de estadística
+// Área de Chat
 // ---------------------------------------------------------------------------
-interface StatCardProps {
-  label: string;
-  value: React.ReactNode;
-  valueColor?: string;
-}
+function ChatArea() {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: '¡Hola! Soy el Agente Kyocera. Puedes alimentarme con datos, manuales o hacerme preguntas operativas.' }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-function StatCard({ label, value, valueColor = '#333' }: StatCardProps) {
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+
+    // 1. Agregar mensaje del usuario
+    const newMsg = { role: 'user', text: inputValue };
+    setMessages(prev => [...prev, newMsg]);
+    setInputValue('');
+
+    // 2. Simular respuesta del bot (Placeholder para conectar con tu backend AI)
+    setTimeout(() => {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        text: 'Datos recibidos. Por ahora estoy en modo de interfaz gráfica, pero pronto procesaré esta información en el backend.' 
+      }]);
+    }, 1000);
+  };
+
   return (
-    <div style={styles.statCard}>
-      <h3 style={styles.statLabel}>{label}</h3>
-      <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold', color: valueColor }}>
-        {value}
-      </p>
+    <div style={styles.chatContainer}>
+      <div style={styles.messageList}>
+        {messages.map((msg, idx) => (
+          <div key={idx} style={msg.role === 'user' ? styles.messageWrapperUser : styles.messageWrapperBot}>
+            <div style={msg.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleBot}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      
+      <div style={styles.inputContainer}>
+        <form onSubmit={handleSend} style={styles.inputWrapper}>
+          <input 
+            type="text" 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Escribe un mensaje..." 
+            style={styles.textInput} 
+          />
+          <button type="submit" style={styles.sendButton}>
+            ↑
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Barra superior
+// Dashboard Principal
 // ---------------------------------------------------------------------------
-interface TopBarProps {
-  userLabel: string;
-}
-
-function TopBar({ userLabel }: TopBarProps) {
-  return (
-    <header style={styles.topBar}>
-      <h1 style={styles.topBarTitle}>Panel de Control</h1>
-      <div style={styles.userBadge}>👤 {userLabel}</div>
-    </header>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Dashboard (contenido post-login)
-// ---------------------------------------------------------------------------
-interface DashboardProps {
-  userLabel: string;
-  onSignOut: () => void;
-}
-
-function Dashboard({ userLabel, onSignOut }: DashboardProps) {
-  const [activeItem, setActiveItem] = useState<string>('resumen');
+function Dashboard({ userLabel, onSignOut }: any) {
+  // Aquí controlamos qué vista se muestra al hacer clic en el menú
+  const [activeItem, setActiveItem] = useState('chat');
 
   return (
     <div style={styles.page}>
       <Sidebar activeItem={activeItem} onSelect={setActiveItem} onSignOut={onSignOut} />
 
       <main style={styles.main}>
-        <TopBar userLabel={userLabel} />
+        <header style={styles.topBar}>
+          <div style={styles.userBadge}>👤 {userLabel}</div>
+        </header>
 
-        <div style={styles.statsGrid}>
-          <StatCard label="Estado de Red" value="● Conectado a AWS" valueColor="green" />
-          <StatCard label="Equipos Registrados" value={0} />
-          <StatCard label="Alertas de Tóner" value={0} valueColor="#d00000" />
-        </div>
+        {/* Renderizado condicional: Chat o Configuración */}
+        {activeItem === 'chat' ? (
+          <ChatArea />
+        ) : (
+          <div style={styles.settingsView}>
+            <h2>Configuración del Agente</h2>
+            <p>Aquí agregaremos controles para modificar el comportamiento de la IA, subir documentos base o ajustar credenciales.</p>
+          </div>
+        )}
       </main>
     </div>
   );
