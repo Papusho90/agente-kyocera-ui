@@ -21,6 +21,8 @@
     "vite": "^8.2.2"
   },
   "dependencies": {
+    "aws-amplify": "^6.0.0",
+    "@aws-amplify/ui-react": "^6.0.0",
     "aws-amplify": "^6.20.0"
   }
 }
