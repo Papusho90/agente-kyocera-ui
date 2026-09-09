@@ -140,7 +140,7 @@ function ChatArea() {
 
     try {
       // AQUÍ IRÁ LA URL DE TU LAMBDA EN EL FUTURO
-      const lambdaUrl = 'https://TU_URL_DE_LAMBDA_AQUI.lambda-url.us-east-1.on.aws/'; 
+      const lambdaUrl = 'https://atwhxzvbgnacwlgmsb44ltydc40cbauv.lambda-url.us-east-1.on.aws/'; 
       
       const response = await fetch(lambdaUrl, {
         method: 'POST',
