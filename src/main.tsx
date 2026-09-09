@@ -17,9 +17,6 @@ import outputs from '../amplify_outputs.json';
 
 Amplify.configure(outputs);
 
-// ---------------------------------------------------------------------------
-// Tema Kyocera
-// ---------------------------------------------------------------------------
 const kyoceraTheme: Theme = {
   name: 'Kyocera-Theme',
   tokens: {
@@ -34,9 +31,6 @@ const kyoceraTheme: Theme = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Estilos centralizados
-// ---------------------------------------------------------------------------
 const styles: Record<string, React.CSSProperties> = {
   page: { display: 'flex', minHeight: '100vh', margin: '-8px', fontFamily: 'sans-serif' },
   sidebar: { width: '260px', backgroundColor: '#171717', color: '#fff', padding: '1.5rem', position: 'relative', display: 'flex', flexDirection: 'column' },
@@ -100,9 +94,6 @@ function Sidebar({ activeItem, onSelect, onSignOut }: any) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Área de Chat 
-// ---------------------------------------------------------------------------
 function ChatArea() {
   const [messages, setMessages] = useState([
     { role: 'assistant', text: '¡Hola! Soy el Agente Kyocera. Puedes alimentarme con datos, manuales o hacerme preguntas operativas.' }
@@ -111,7 +102,6 @@ function ChatArea() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // CORRECCIÓN: Estructura estricta para evitar el error "l is not a function"
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -128,7 +118,6 @@ function ChatArea() {
     setIsLoading(true);
 
     try {
-      // Usando tu URL real obtenida de los registros de error
       const lambdaUrl = 'https://atwhxzvbgnacwlgmsb44ltydc40cbauv.lambda-url.us-east-1.on.aws/'; 
       
       const response = await fetch(lambdaUrl, {
@@ -137,13 +126,9 @@ function ChatArea() {
         body: JSON.stringify({ prompt: userText })
       });
 
-      if (!response.ok) {
-        throw new Error(`Fallo en la red (Código ${response.status})`);
-      }
-      
+      // ELIMINAMOS EL RECHAZO A LOS CÓDIGOS 500. Ahora leemos lo que el servidor mande, sea éxito o error.
       const data = await response.json();
       
-      // PARCHE DE SEGURIDAD: Convertimos cualquier respuesta en texto puro
       let textoIA = 'Sin respuesta';
       if (typeof data === 'string') {
         textoIA = data;
@@ -159,7 +144,7 @@ function ChatArea() {
       
     } catch (error: any) {
       console.error("Error capturado:", error);
-      setMessages(prev => [...prev, { role: 'assistant', text: `Error de conexión: ${error.message}. Verifica que Lambda esté funcionando.` }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: `Fallo crítico de red: ${error.message}` }]);
     } finally {
       setIsLoading(false);
     }
