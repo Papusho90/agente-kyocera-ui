@@ -26,13 +26,8 @@ const kyoceraTheme: Theme = {
     colors: {
       brand: {
         primary: {
-          10: '#fce5e6',
-          20: '#f8ccce',
-          40: '#f099a0',
-          60: '#e56672',
-          80: '#d00000',
-          90: '#a30000',
-          100: '#800000',
+          10: '#fce5e6', 20: '#f8ccce', 40: '#f099a0', 60: '#e56672',
+          80: '#d00000', 90: '#a30000', 100: '#800000',
         },
       },
     },
@@ -66,27 +61,17 @@ const styles: Record<string, React.CSSProperties> = {
   settingsView: { padding: '3rem', color: '#333' }
 };
 
-// ---------------------------------------------------------------------------
-// Header del Login
-// ---------------------------------------------------------------------------
 function AuthHeader() {
   const { tokens } = useTheme();
   return (
     <View textAlign="center" padding={tokens.space.large}>
-      <Heading level={2} style={{ color: '#d00000', fontWeight: 'bold' }}>
-        Agente Kyocera
-      </Heading>
-      <Text style={{ marginTop: '0.5rem', color: '#555' }}>
-        Inicia sesión para conversar con el Agente
-      </Text>
+      <Heading level={2} style={{ color: '#d00000', fontWeight: 'bold' }}>Agente Kyocera</Heading>
+      <Text style={{ marginTop: '0.5rem', color: '#555' }}>Inicia sesión para conversar con el Agente</Text>
     </View>
   );
 }
 const authComponents = { Header: AuthHeader };
 
-// ---------------------------------------------------------------------------
-// Sidebar
-// ---------------------------------------------------------------------------
 const NAV_ITEMS = [
   { id: 'chat', label: '💬 Nuevo Chat' },
   { id: 'configuracion', label: '⚙️ Configuración' },
@@ -116,7 +101,7 @@ function Sidebar({ activeItem, onSelect, onSignOut }: any) {
 }
 
 // ---------------------------------------------------------------------------
-// Área de Chat (Actualizada para consumir API real)
+// Área de Chat 
 // ---------------------------------------------------------------------------
 function ChatArea() {
   const [messages, setMessages] = useState([
@@ -126,8 +111,12 @@ function ChatArea() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  useEffect(() => scrollToBottom(), [messages]);
+  // CORRECCIÓN: Estructura estricta para evitar el error "l is not a function"
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +128,7 @@ function ChatArea() {
     setIsLoading(true);
 
     try {
-      // AQUÍ IRÁ LA URL DE TU LAMBDA EN EL FUTURO
+      // Usando tu URL real obtenida de los registros de error
       const lambdaUrl = 'https://atwhxzvbgnacwlgmsb44ltydc40cbauv.lambda-url.us-east-1.on.aws/'; 
       
       const response = await fetch(lambdaUrl, {
@@ -148,13 +137,29 @@ function ChatArea() {
         body: JSON.stringify({ prompt: userText })
       });
 
-      if (!response.ok) throw new Error('Error en la red');
+      if (!response.ok) {
+        throw new Error(`Fallo en la red (Código ${response.status})`);
+      }
+      
       const data = await response.json();
       
-      setMessages(prev => [...prev, { role: 'assistant', text: data.respuesta || data.message }]);
-    } catch (error) {
-      console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Esperando conexión con el backend de Python...' }]);
+      // PARCHE DE SEGURIDAD: Convertimos cualquier respuesta en texto puro
+      let textoIA = 'Sin respuesta';
+      if (typeof data === 'string') {
+        textoIA = data;
+      } else if (data && data.respuesta) {
+        textoIA = typeof data.respuesta === 'object' ? JSON.stringify(data.respuesta) : String(data.respuesta);
+      } else if (data && data.message) {
+        textoIA = typeof data.message === 'object' ? JSON.stringify(data.message) : String(data.message);
+      } else {
+        textoIA = JSON.stringify(data);
+      }
+      
+      setMessages(prev => [...prev, { role: 'assistant', text: textoIA }]);
+      
+    } catch (error: any) {
+      console.error("Error capturado:", error);
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error de conexión: ${error.message}. Verifica que Lambda esté funcionando.` }]);
     } finally {
       setIsLoading(false);
     }
@@ -188,9 +193,6 @@ function ChatArea() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Dashboard Principal
-// ---------------------------------------------------------------------------
 function Dashboard({ userLabel, onSignOut }: any) {
   const [activeItem, setActiveItem] = useState('chat');
   return (
@@ -211,9 +213,6 @@ function Dashboard({ userLabel, onSignOut }: any) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Punto de entrada
-// ---------------------------------------------------------------------------
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider theme={kyoceraTheme}>
