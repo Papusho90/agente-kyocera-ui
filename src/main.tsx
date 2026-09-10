@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Amplify } from 'aws-amplify';
@@ -150,13 +152,19 @@ function ChatArea() {
     }
   };
 
-  return (
+ return (
     <div style={styles.chatContainer}>
       <div style={styles.messageList}>
         {messages.map((msg, idx) => (
           <div key={idx} style={msg.role === 'user' ? styles.messageWrapperUser : styles.messageWrapperBot}>
             <div style={msg.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleBot}>
-              {msg.text}
+              {msg.role === 'user' ? (
+                msg.text
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.text}
+                </ReactMarkdown>
+              )}
             </div>
           </div>
         ))}
